@@ -1,4 +1,3 @@
-This is a Directroy dedicated to revision of the Git and GitHub command and wayarounds.
 # Smart File Organizer (Java CLI)
 
 Point it at a messy folder and it will:
@@ -9,27 +8,49 @@ Point it at a messy folder and it will:
 
 No API key? It still works, using simple extension rules instead of AI.
 
-## Run it
+## Install (one time)
 
 ```bash
-javac -d out src/*.java                 # compile (Java 17+)
-export OPENAI_API_KEY="sk-..."           # your key (never commit it!)
-java -cp out Main                        # then drag a folder into the terminal
-java -cp out Main ~/Downloads --dry-run  # preview only, move nothing
-java -cp out Main ~/Downloads --yes      # skip the "are you sure?" question
+./install.sh          # builds the jar and adds an `organize` command to ~/.local/bin
 ```
 
-Optional: `export OPENAI_MODEL=gpt-4o` to use a different model (default `gpt-4o-mini`).
+Needs a JDK 17+ (`brew install openjdk@21`). Re-run `./install.sh` after changing the code.
+
+## Use it
+
+```bash
+organize                        # interactive menu - just follow the prompts
+organize ~/Downloads --dry-run  # preview only, move nothing
+organize ~/Downloads            # organize (asks before moving)
+organize ~/Downloads --yes      # skip the "are you sure?" question
+organize ~/Downloads --deep     # AI also reads contents (text, Word/PowerPoint/Excel, images, PDFs)
+organize --help
+```
+
+For AI categories: `export OPENAI_API_KEY="sk-..."` (never commit it!).
+Optional: `export OPENAI_MODEL=gpt-4o` (default `gpt-4o-mini`).
+Without a key it still works, using file-extension rules.
+
+**Deep mode** (`--deep`, or `d` in the menu) sends a small sample of each file to OpenAI:
+the first ~2,000 characters of text, the text inside Office files, and images/PDFs up to 4 MB
+(videos and audio still go by name). It is slower and costs more, so don't use it on private folders.
+
+**Safe by default:** hidden folders (`.git`, `.obsidian`...), `node_modules`/`dist`/`build`, apps
+and any folder that is a git project are left untouched, so organizing never breaks a project.
+The screen shows a short summary; the full list is saved to
+`~/.local/share/smart-file-organizer/last-report.txt`.
 
 ## Code overview (`src/`)
 
 | File | What it does |
 |------|--------------|
-| `Main.java` | Reads the folder, runs each step in order |
+| `Main.java` | Command-line flags, runs each step in order |
+| `Menu.java` | Interactive menu shown when no folder is given |
 | `FileInfo.java` | Record holding one file's details |
 | `FolderScanner.java` | Walks the folder and hashes files |
 | `DuplicateFinder.java` | Groups files by hash |
-| `AiCategorizer.java` | Sends file names to OpenAI, reads back categories |
+| `AiCategorizer.java` | Sends file names (and contents in deep mode) to OpenAI, reads back categories |
+| `ContentReader.java` | Turns a file's contents into AI input: text sample, Office text, image or PDF |
 | `FallbackRules.java` | Extension-based categories when AI is unavailable |
 | `Json.java` | Tiny JSON helpers (so we need no libraries) |
 | `StatsPrinter.java` | Prints the summary |
