@@ -3,12 +3,16 @@ import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 
-/** Groups files by hash. Any group with more than one file is a set of duplicates. */
+/**
+ * Groups files by hash. Any group with more than one file is a set of duplicates.
+ * Empty files are skipped: they all share the same hash but aren't real copies.
+ */
 public class DuplicateFinder {
 
     public List<List<FileInfo>> findDuplicates(List<FileInfo> files) {
         Map<String, List<FileInfo>> byHash = new LinkedHashMap<>();
         for (FileInfo file : files) {
+            if (file.size() == 0) continue;
             byHash.computeIfAbsent(file.hash(), h -> new ArrayList<>()).add(file);
         }
 
